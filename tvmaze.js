@@ -3,7 +3,10 @@
 const $showsList = $("#shows-list");
 const $episodesArea = $("#episodes-area");
 const $searchForm = $("#search-form");
-const $episodesList = $("episodes-area");
+const $episodesList = $("#episodes-list");
+const $episodesButton = $(".episodes");
+const $body = $("body");
+const noImage = "http://tinyurl.com/missing-tv";
 
 const randomNumber = Math.floor(Math.random() * 11);
 
@@ -15,21 +18,34 @@ const randomNumber = Math.floor(Math.random() * 11);
  *    (if no image URL given by API, put in a default image URL)
  */
 
-async function getShowsByTerm(term/* term */) {
-  // ADD: Remove placeholder & make request to TVMaze search shows API.
+ async function getShowsByTerm(query) {
+  let response = await axios.get(
+    `http://api.tvmaze.com/search/shows?q=${query}`);
 
-  const tvShows = await axios.get(`https://api.tvmaze.com/search/shows?q=${term}`);
-  console.log(tvShows.data);
+  const shows = response.data.map(result => {
+    const show = result.show;
+    return {
+      id: show.id,
+      name: show.name,
+      summary: show.summary,
+      image: show.image ? show.image.medium : noImage,
+    };
+  });
+
+  return shows;
+}
 
 
-  return [
-    {
-      id: tvShows.data[randomNumber].show.id,
-      name: tvShows.data[randomNumber].show.name,
-      summary: tvShows.data[randomNumber].show.summary,
-      image: tvShows.data[randomNumber].show.image.medium,
-    }
-  ]
+
+
+  // return [
+  //   {
+  //     id: tvShows.data[randomNumber].show.id,
+  //     name: tvShows.data[randomNumber].show.name,
+  //     summary: tvShows.data[randomNumber].show.summary,
+  //     image: tvShows.data[randomNumber].show.image.medium,
+  //   }
+  // ]
 
 
   // return [
@@ -50,7 +66,7 @@ async function getShowsByTerm(term/* term */) {
   //         "http://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
   //   }
   // ]
-}
+
 
 
 /** Given list of shows, create markup for each and to DOM */
@@ -66,7 +82,7 @@ function populateShows(shows) {
            <div class="media-body">
              <h5 class="text-primary">${show.name}</h5>
              <div><small>${show.summary}</small></div>
-             <button class="btn btn-outline-light btn-sm Show-getEpisodes">
+             <button class="btn btn-primary get-episo">
                Episodes
              </button>
            </div>
@@ -108,29 +124,35 @@ $searchForm.on("submit", async function (evt) {
 // function populateEpisodes(episodes) { }
 
 
-async function getEpisodes(ID) {
-  const episode = await axios.get(`https://api.tvmaze.com/episodes/${ID}`);
+async function getEpisodes(id) {
+  const result = await axios.get(`https://api.tvmaze.com/episodes/${id}`);
 
-  console.log(episode.data);
+  console.log(result.data);
 
-  return [
-    {
-      id: episode.data.id,
-      name: episode.data.name,
-      season: episode.data.season,
-      number: episode.data.number
-    }
-  ]
+  const episodes = result.data.map((episode) => ({
+      id: episode.id,
+      name: episode.name,
+      season: episode.season,
+      number: episode.number
+  }));
+
+  return episodes;
 }
 
-async function populateEpisodes(episode) {
-  const episodeName = document.createElement("li");
-  episodeName.innerHTML = `episode name: ${episode.id}`;
-  const episodeSeason = document.createElement("li");
-  episodeSeason.innerHTML = `episode season: ${episode.season}`
-  const episodeNumber = document.createElement("li");
-  episodeNumber.innerHTML = `episode number: ${episode.number}`
+// function populateEpisodes(episodes) {
+//   $episodesList.empty();
 
-  $episodesList.append(episodeName, episodeSeason, episodeNumber);
-}
+//   for(let episode of episodes) {
+//     const $item = $(`<li> ${episode.name}, season ${episode.season}, episode ${episode.number} </li>`);
 
+//     $episodesList.append($item);
+//   }
+
+//   $($episodesArea).show();
+// }
+
+// $("#shows-list").on("click", ".get-episodes", async function handleEpisodeClick(evt) {
+//   let showId = $(evt.target).closest(".Show").data("show-id");
+//   let episodes = await getEpisodes(showId);
+//   populateEpisodes(episodes);
+// });
